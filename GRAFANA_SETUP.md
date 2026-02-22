@@ -48,6 +48,7 @@ Wait for all services to start (~30 seconds).
 ### 3. View Dashboards
 
 Dashboards are automatically loaded! Go to:
+
 - http://localhost:3001/d/nodejs-dashboard (Node.js Dashboard)
 - http://localhost:3001/d/logs-dashboard (Logs Dashboard)
 
@@ -62,6 +63,7 @@ Run the traffic generation script to populate your dashboards with data:
 ```
 
 This will:
+
 - Hit various endpoints (health, error, heavy-task, 404s)
 - Generate metrics for Prometheus
 - Create log entries in Loki
@@ -101,10 +103,12 @@ This will:
 ## 📈 Metrics Collected
 
 ### HTTP Metrics:
+
 - `http_requests_total` - Counter of total HTTP requests (labels: method, route, status_code)
 - `http_request_duration_seconds` - Histogram of request duration (labels: method, route, status_code)
 
 ### Default Node.js Metrics:
+
 - Memory usage
 - CPU usage
 - Event loop lag
@@ -113,6 +117,7 @@ This will:
 ## 📝 Log Collection
 
 Logs are sent to Loki with:
+
 - **Job Label**: `node-app`
 - **Format**: JSON structured logs
 - **Includes**: HTTP method, path, status code, response time
@@ -129,6 +134,7 @@ MY_HOST=loki
 ### Grafana Credentials
 
 Default credentials (change in docker-compose.yml):
+
 - Username: `admin`
 - Password: `admin`
 
@@ -137,14 +143,17 @@ Default credentials (change in docker-compose.yml):
 ### No data in dashboards?
 
 1. **Generate traffic**:
+
    ```bash
    ./generate-traffic.sh
    ```
 
 2. **Check services are running**:
+
    ```bash
    docker-compose ps
    ```
+
    All services should be "Up"
 
 3. **Verify Prometheus is scraping**:
@@ -152,6 +161,7 @@ Default credentials (change in docker-compose.yml):
    - "node-app:3000" should be UP
 
 4. **Check Loki is receiving logs**:
+
    ```bash
    curl -G -s "http://localhost:3100/loki/api/v1/query" --data-urlencode 'query={job="node-app"}' | jq
    ```
@@ -165,6 +175,7 @@ Default credentials (change in docker-compose.yml):
 ### Dashboards not appearing?
 
 1. Check Grafana logs:
+
    ```bash
    docker-compose logs grafana
    ```
@@ -204,6 +215,7 @@ Default credentials (change in docker-compose.yml):
 Dashboards are editable in Grafana UI. Changes are saved in Grafana's database.
 
 To persist changes:
+
 1. Edit dashboard in Grafana
 2. Click Share → Export → Save to file
 3. Replace the JSON file in `grafana/dashboards/`
