@@ -2,6 +2,7 @@
   "name": "prometheus-test-server",
   "version": "1.0.0",
   "description": "Express server for testing Prometheus and Grafana",
+  "type": "module",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

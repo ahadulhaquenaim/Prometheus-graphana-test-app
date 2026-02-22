@@ -1,5 +1,5 @@
-const express = require('express');
-const { logger, client } = require('./middleware'); // Import logger and client from middleware
+import express from 'express';
+import { logger, client } from './middleware.js';
 
 const router = express.Router();
 
@@ -63,4 +63,4 @@ router.get('/heavy-task', async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

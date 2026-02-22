@@ -1,8 +1,9 @@
-const express = require('express');
-const router = require('./router'); // Import routes
-const { metricsMiddleware } = require('./middleware'); // Import metrics middleware
+import express from 'express';
+import router from './router.js';
+import { metricsMiddleware } from './middleware.js';
+import dotenv from 'dotenv';
 
-require('dotenv').config() // Load environment variables from .env file
+dotenv.config(); // Load environment variables from .env file
 const app = express();
 const PORT = 3000;
 

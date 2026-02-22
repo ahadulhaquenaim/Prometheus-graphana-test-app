@@ -1,9 +1,10 @@
-const client = require('prom-client');
-const responseTime = require('response-time');
-const {createLogger, transports} = require('winston');
-const LokiTransport = require('winston-loki');
+import client from 'prom-client';
+import responseTime from 'response-time';
+import { createLogger, transports } from 'winston';
+import LokiTransport from 'winston-loki';
+import dotenv from 'dotenv';
 
-require('dotenv').config();
+dotenv.config();
 
 // ==================== LOGGER SETUP ====================
 const logger = createLogger({
@@ -37,7 +38,7 @@ const metricsMiddleware = responseTime((req, res, time) => {
   reqResTime.labels(req.method, req.path, res.statusCode).observe(time / 1000);
 });
 
-module.exports = {
+export {
   logger,
   metricsMiddleware,
   client
