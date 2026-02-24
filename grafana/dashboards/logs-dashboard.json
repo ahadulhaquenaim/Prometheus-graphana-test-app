@@ -281,7 +281,7 @@
             "uid": "loki"
           },
           "editorMode": "code",
-          "expr": "sum(count_over_time({job=\"node-app\"} |~ \"(?i)(error|exception|fail|fatal)\"[5m]))",
+          "expr": "sum(count_over_time({job=\"node-app\"} |~ \"(?i)error|exception|fail|fatal\"[5m]))",
           "queryType": "range",
           "refId": "A"
         }
@@ -318,7 +318,7 @@
             "uid": "loki"
           },
           "editorMode": "code",
-          "expr": "{job=\"node-app\"} |~ \"(?i)(error|exception|fail|fatal)\"",
+          "expr": "{job=\"node-app\"} |~ \"(?i)error|exception|fail|fatal\"",
           "queryType": "range",
           "refId": "A"
         }
@@ -429,7 +429,7 @@
             "uid": "loki"
           },
           "editorMode": "code",
-          "expr": "sum(count_over_time({job=\"node-app\"} |~ \"(?i)(error|exception|fail|fatal)\"[1m]))",
+          "expr": "sum(count_over_time({job=\"node-app\"} |~ \"(?i)error|exception|fail|fatal\"[1m]))",
           "queryType": "range",
           "refId": "A",
           "legendFormat": "Errors"

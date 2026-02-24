@@ -20,9 +20,20 @@ app.use(router); // Use the router from router.js
 
 // 404 route handler
 app.use((req, res) => {
+  console.log(`ERROR: 404 - Route not found: ${req.path}`);
   res.status(404).json({
     status: 'NOT_FOUND',
     message: 'Route not found',
+    path: req.path
+  });
+});
+
+// Global error handler
+app.use((err, req, res, next) => {
+  console.error(`ERROR: ${err.message}`, err.stack);
+  res.status(err.status || 500).json({
+    status: 'ERROR',
+    message: err.message || 'Internal Server Error',
     path: req.path
   });
 });

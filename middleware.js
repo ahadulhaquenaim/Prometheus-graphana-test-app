@@ -1,20 +1,8 @@
 import client from 'prom-client';
 import responseTime from 'response-time';
-import { createLogger } from 'winston';
-import LokiTransport from 'winston-loki';
 import dotenv from 'dotenv';
 
 dotenv.config();
-
-// ==================== LOGGER SETUP ====================
-const logger = createLogger({
-  transports: [
-    new LokiTransport({
-      host: `http://${process.env.MY_HOST}:3100`,
-      labels: { job: 'node-app' }
-    })
-  ]
-});
 
 // ==================== PROMETHEUS METRICS SETUP ====================
 // Clear the registry to avoid duplicate metric registration
@@ -59,7 +47,7 @@ const metricsMiddleware = (req, res, next) => {
     reqResTime.labels(method, route, statusCode).observe(duration);
     
     // Log the request
-    logger.info(`${method} ${route} ${statusCode} - ${(duration * 1000).toFixed(2)}ms`);
+    console.log(`${method} ${route} ${statusCode} - ${(duration * 1000).toFixed(2)}ms`);
     
     // Call the original end function
     originalEnd.apply(res, args);
@@ -69,7 +57,6 @@ const metricsMiddleware = (req, res, next) => {
 };
 
 export {
-  logger,
   metricsMiddleware,
   client
 };
