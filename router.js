@@ -1,5 +1,5 @@
 import express from 'express';
-import { logger, client } from './middleware.js';
+import { client } from './middleware.js';
 
 const router = express.Router();
 
@@ -12,6 +12,7 @@ router.get('/metrics', async (req, res) => {
     const metrics = await client.register.metrics();
     res.send(metrics);
   } catch (error) {
+    console.error(`ERROR: Failed to fetch metrics - ${error.message}`);
     res.status(500).json({
       status: 'ERROR',
       message: 'Failed to fetch metrics',
@@ -22,7 +23,7 @@ router.get('/metrics', async (req, res) => {
 
 // Health check route
 router.get('/health', (req, res) => {
-  logger.info('Health check endpoint hit');
+  console.log('Health check endpoint hit');
   res.status(200).json({
     status: 'OK',
     message: 'Server is healthy',
@@ -32,7 +33,7 @@ router.get('/health', (req, res) => {
 
 // Error route (returns an error)
 router.get('/error', (req, res) => {
-  logger.error('Error endpoint hit');
+  console.error('ERROR: Test error endpoint hit - Something went wrong!');
   res.status(500).json({
     status: 'ERROR',
     message: 'This is a test error route',
@@ -43,7 +44,7 @@ router.get('/error', (req, res) => {
 
 // Heavy task route (waits for 5 seconds)
 router.get('/heavy-task', async (req, res) => {
-  logger.info('Heavy task endpoint hit');
+  console.log('Heavy task endpoint hit');
   try {
     // Simulate a heavy task by waiting 5 seconds
     await new Promise(resolve => setTimeout(resolve, 5000));
@@ -55,6 +56,7 @@ router.get('/heavy-task', async (req, res) => {
       timestamp: new Date().toISOString()
     });
   } catch (error) {
+    console.error(`ERROR: Heavy task failed - ${error.message}`);
     res.status(500).json({
       status: 'ERROR',
       message: 'Heavy task failed',
