@@ -83,8 +83,8 @@ groups:
         execErrState: Alerting
         for: 1m
         annotations:
-          description: "The Node.js server ({{ $labels.instance }}) has been down for more than 1 minute."
-          summary: "Node.js Server Down Alert"
+          description: "The Node.js server ({{ $labels.instance }}) is not responding. Service health check failed."
+          summary: "Node.js Server Health Alert"
         labels:
           severity: critical
           service: node-app

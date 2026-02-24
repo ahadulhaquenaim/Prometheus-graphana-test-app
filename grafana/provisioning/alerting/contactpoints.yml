@@ -9,4 +9,39 @@ contactPoints:
         settings:
           addresses: ${ALERT_EMAIL_ADDRESSES}
           singleEmail: true
+          subject: |
+            {{ if eq .Status "firing" }}🔴 ALERT: Node.js Server is DOWN{{ else }}✅ RESOLVED: Node.js Server is UP{{ end }}
+          message: |
+            {{ if eq .Status "firing" }}
+            ⚠️ **ALERT FIRING**
+
+            The Node.js server has gone down and requires immediate attention.
+
+            **Alert Details:**
+            - Alert Name: {{ .CommonLabels.alertname }}
+            - Severity: {{ .CommonLabels.severity }}
+            - Service: {{ .CommonLabels.service }}
+            - Status: {{ .Status }}
+            - Started: {{ .StartsAt }}
+
+            **Description:**
+            {{ range .Alerts }}
+            {{ .Annotations.description }}
+            {{ end }}
+
+            Please investigate and restore the service immediately.
+            {{ else }}
+            ✅ **ALERT RESOLVED**
+
+            Good news! The Node.js server is back online and functioning normally.
+
+            **Alert Details:**
+            - Alert Name: {{ .CommonLabels.alertname }}
+            - Service: {{ .CommonLabels.service }}
+            - Status: {{ .Status }}
+            - Resolved At: {{ .EndsAt }}
+            - Duration: {{ .StartsAt }} to {{ .EndsAt }}
+
+            The issue has been resolved and the service is operating normally.
+            {{ end }}
         disableResolveMessage: false
