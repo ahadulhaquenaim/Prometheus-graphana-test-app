@@ -13,6 +13,7 @@ A complete monitoring solution for Node.js applications using Prometheus for met
 - [Using Grafana](#using-grafana)
 - [API Endpoints](#api-endpoints)
 - [Monitoring Features](#monitoring-features)
+- [Email Alerting Setup](#email-alerting-setup)
 - [Troubleshooting](#troubleshooting)
 - [Stopping the Application](#stopping-the-application)
 
@@ -23,6 +24,7 @@ This project demonstrates a complete observability stack for a Node.js Express a
 - **Metrics Collection**: Prometheus scrapes metrics from the Node.js app
 - **Log Aggregation**: Loki collects and stores application logs
 - **Visualization**: Grafana provides beautiful dashboards for metrics and logs
+- **Email Alerting**: Grafana sends email notifications when Node.js server goes down
 - **Containerization**: All services run in Docker containers with Docker Compose
 
 ## 🏗️ Architecture
@@ -303,6 +305,122 @@ Application logs are sent to Loki with:
 - HTTP method and route
 - Status code
 - Response time
+
+## 📧 Email Alerting Setup
+
+This project includes email alerting that sends notifications when your Node.js server goes down.
+
+### Step 1: Create Environment File
+
+Create a `.env` file in the project root with the following SMTP configuration:
+
+```bash
+# Grafana credentials
+GRAFANA_USERNAME=admin
+GRAFANA_PASSWORD=admin
+
+# SMTP Configuration for Email Alerts
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your-email@gmail.com
+SMTP_PASSWORD=your-app-password
+SMTP_FROM_ADDRESS=your-email@gmail.com
+SMTP_SKIP_VERIFY=false
+
+# Alert recipient email (can be comma-separated for multiple emails)
+ALERT_EMAIL_ADDRESSES=recipient@example.com
+```
+
+### Step 2: Gmail Setup (if using Gmail)
+
+If you're using Gmail, you need to create an **App Password**:
+
+1. Go to your [Google Account Security](https://myaccount.google.com/security)
+2. Enable **2-Step Verification** if not already enabled
+3. Search for "App passwords" in the settings
+4. Create a new app password for "Mail"
+5. Copy the 16-character password and use it as `SMTP_PASSWORD` in the `.env` file
+
+### Step 3: Alternative Email Providers
+
+For other email providers, use their SMTP settings:
+
+#### **Outlook/Hotmail**
+
+```bash
+SMTP_HOST=smtp-mail.outlook.com
+SMTP_PORT=587
+```
+
+#### **Yahoo**
+
+```bash
+SMTP_HOST=smtp.mail.yahoo.com
+SMTP_PORT=587
+```
+
+#### **SendGrid**
+
+```bash
+SMTP_HOST=smtp.sendgrid.net
+SMTP_PORT=587
+SMTP_USER=apikey
+SMTP_PASSWORD=your-sendgrid-api-key
+```
+
+### Step 4: Restart Services
+
+After creating the `.env` file, restart your services:
+
+```bash
+docker-compose down
+docker-compose up -d
+```
+
+### Step 5: Test the Alert
+
+To test the email alert system:
+
+1. **Stop the Node.js server**:
+
+   ```bash
+   docker-compose stop node-app
+   ```
+
+2. **Wait for the alert**: The alert rule checks every 30 seconds. After the server is down for 1 minute, you should receive an email notification.
+
+3. **Check email**: Look for an email with subject "Node.js Server is Down"
+
+4. **Restart the server**:
+   ```bash
+   docker-compose start node-app
+   ```
+
+### Alert Configuration Details
+
+The alert system monitors the `up` metric from Prometheus:
+
+- **Check Interval**: Every 30 seconds
+- **Alert Condition**: Server down for more than 1 minute
+- **Severity**: Critical
+- **Notification Repeat**: Every 12 hours (until resolved)
+
+### Viewing Alerts in Grafana
+
+1. Log into Grafana at `http://localhost:3001`
+2. Go to **Alerting** → **Alert Rules**
+3. You should see "Node.js Server is Down" alert
+4. Go to **Alerting** → **Contact Points** to verify email configuration
+5. Go to **Alerting** → **Notification Policies** to view notification routing
+
+### Customizing Alerts
+
+You can customize the alert by editing `grafana/provisioning/alerting/rules.yml`:
+
+- Change the evaluation interval
+- Modify the threshold
+- Add more alert rules for other conditions (CPU, memory, request rate, etc.)
+- Update alert messages and severity levels
 
 ## 🐛 Troubleshooting
 
