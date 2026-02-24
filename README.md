@@ -389,12 +389,72 @@ To test the email alert system:
 
 2. **Wait for the alert**: The alert rule checks every 30 seconds. After the server is down for 1 minute, you should receive an email notification.
 
-3. **Check email**: Look for an email with subject "Node.js Server is Down"
+3. **Check email**: Look for an email with subject "🔴 ALERT: Node.js Server is DOWN"
 
-4. **Restart the server**:
+4. **Verify in Grafana**:
+   - Go to `http://localhost:3001`
+   - Navigate to **Alerting** → **Alert Rules**
+   - The "Node.js Server is Down" alert should show as **Firing** (red)
+
+5. **Restart the server**:
+
    ```bash
    docker-compose start node-app
    ```
+
+6. **Check resolution email**: After the server is back up, you should receive another email with subject "✅ RESOLVED: Node.js Server is UP"
+
+### Troubleshooting Email Alerts
+
+#### Email Not Received
+
+1. **Check Grafana logs for SMTP errors**:
+
+   ```bash
+   docker-compose logs grafana | grep -i smtp
+   docker-compose logs grafana | grep -i email
+   ```
+
+2. **Verify SMTP configuration in Grafana**:
+   - Log into Grafana
+   - Go to **Alerting** → **Contact Points**
+   - Click on "Email Notifications"
+   - Click "Test" to send a test email
+
+3. **Check spam/junk folder**: Email alerts might be filtered as spam
+
+4. **Verify environment variables are loaded**:
+
+   ```bash
+   docker-compose exec grafana env | grep SMTP
+   docker-compose exec grafana env | grep ALERT_EMAIL
+   ```
+
+5. **Common issues**:
+   - **Gmail**: Make sure you're using an App Password, not your regular password
+   - **Port 587 blocked**: Try port 465 with SSL instead
+   - **Firewall**: Ensure outbound SMTP traffic is allowed
+   - **Invalid credentials**: Double-check username and password
+
+#### Alert Not Firing
+
+1. **Check if alert rule is loaded**:
+   - Go to Grafana → **Alerting** → **Alert Rules**
+   - Verify "Node.js Server is Down" exists
+
+2. **Check Prometheus target**:
+   - Go to `http://localhost:9090/targets`
+   - Verify the Node.js app target is visible
+
+3. **Query Prometheus manually**:
+   - Go to `http://localhost:9090`
+   - Run query: `up{job="prometheus"}`
+   - Should return `1` when server is up, or no data when down
+
+4. **Check alert evaluation**:
+   - In Grafana, go to the alert rule
+   - Click "View" to see the query results
+   - Verify the condition is being evaluated correctly
 
 ### Alert Configuration Details
 
@@ -403,24 +463,114 @@ The alert system monitors the `up` metric from Prometheus:
 - **Check Interval**: Every 30 seconds
 - **Alert Condition**: Server down for more than 1 minute
 - **Severity**: Critical
-- **Notification Repeat**: Every 12 hours (until resolved)
+- **Notification Repeat**: Every 5 minutes (until resolved)
+- **Group Wait**: 10 seconds (time to wait before sending notification after first alert)
+- **Group Interval**: 5 minutes (time between notifications for new alerts in the same group)
 
 ### Viewing Alerts in Grafana
 
 1. Log into Grafana at `http://localhost:3001`
 2. Go to **Alerting** → **Alert Rules**
-3. You should see "Node.js Server is Down" alert
+3. You should see "Node.js Server is Down" alert rule in the "Alerts" folder
 4. Go to **Alerting** → **Contact Points** to verify email configuration
+   - You should see "Email Notifications" contact point configured
 5. Go to **Alerting** → **Notification Policies** to view notification routing
+   - Default policy routes all alerts to "Email Notifications"
+6. Go to **Alerting** → **Silences** to temporarily mute alerts (if needed)
+7. Go to **Alerting** → **Alert Groups** to see active/pending alerts
+
+### Email Notification Features
+
+The email notifications include:
+
+**When Alert Fires (Server Down):**
+
+- 🔴 Subject: "ALERT: Node.js Server is DOWN"
+- Alert name, severity, and service information
+- Detailed description of the issue
+- Timestamp when the alert started
+- Clear formatting for easy reading
+
+**When Alert Resolves (Server Back Up):**
+
+- ✅ Subject: "RESOLVED: Node.js Server is UP"
+- Confirmation that the service is back online
+- Duration of the downtime
+- Resolution timestamp
 
 ### Customizing Alerts
 
-You can customize the alert by editing `grafana/provisioning/alerting/rules.yml`:
+You can customize the alert by editing the following files:
 
-- Change the evaluation interval
-- Modify the threshold
-- Add more alert rules for other conditions (CPU, memory, request rate, etc.)
+#### Alert Rules (`grafana/provisioning/alerting/rules.yml`)
+
+- Change the evaluation interval (default: 30s)
+- Modify the threshold (default: `up < 1`)
+- Change the alert duration before firing (default: 1 minute)
+- Add more alert rules for other conditions:
+  - High CPU usage: `rate(process_cpu_system_seconds_total[1m]) > 0.8`
+  - High memory usage: `process_resident_memory_bytes > 500000000`
+  - High error rate: `rate(http_requests_total{status_code=~"5.."}[1m]) > 0.1`
+  - Slow response times: `histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 2`
 - Update alert messages and severity levels
+
+#### Contact Points (`grafana/provisioning/alerting/contactpoints.yml`)
+
+- Modify email subject templates
+- Customize email message formatting
+- Add additional notification channels (Slack, PagerDuty, Discord, etc.)
+- Enable/disable resolve notifications
+
+#### Notification Policies (`grafana/provisioning/alerting/policies.yml`)
+
+- Change notification repeat interval (default: 5 minutes)
+- Modify grouping rules for alerts
+- Set up different routes for different alert types
+- Configure muting or silencing rules
+
+#### Example: Adding a High Memory Alert
+
+Add this to `rules.yml` under the `rules:` section:
+
+```yaml
+- uid: nodejs_high_memory
+  title: Node.js High Memory Usage
+  condition: C
+  data:
+    - refId: A
+      relativeTimeRange:
+        from: 300
+        to: 0
+      datasourceUid: prometheus
+      model:
+        expr: process_resident_memory_bytes{job="prometheus"} / 1024 / 1024
+        refId: A
+    - refId: B
+      datasourceUid: __expr__
+      model:
+        expression: A
+        reducer: last
+        refId: B
+        type: reduce
+    - refId: C
+      datasourceUid: __expr__
+      model:
+        expression: B
+        refId: C
+        type: threshold
+        conditions:
+          - evaluator:
+              params:
+                - 500 # Alert if memory > 500 MB
+              type: gt
+  for: 2m
+  annotations:
+    description: "Memory usage is {{ $value }}MB"
+    summary: "High memory usage detected"
+  labels:
+    severity: warning
+    service: node-app
+```
 
 ## 🐛 Troubleshooting
 
@@ -575,10 +725,11 @@ Test_graphana/
 ## 🚀 Next Steps
 
 1. **Customize Dashboards**: Edit the JSON files in `grafana/dashboards/`
-2. **Add Alerts**: Configure alerting rules in Prometheus or Grafana
-3. **Add More Metrics**: Extend `middleware.js` with custom metrics
+2. **Add More Alert Rules**: Configure additional alerts for CPU, memory, error rates, etc.
+3. **Add More Metrics**: Extend `middleware.js` with custom business metrics
 4. **Secure Grafana**: Change default passwords in production
 5. **Add Authentication**: Implement auth middleware in the Node.js app
+6. **Add More Notification Channels**: Configure Slack, PagerDuty, or Discord alerts
 
 ---
 
